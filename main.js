@@ -1,103 +1,140 @@
-let program;
-let texture = null;
-const canvas = document.querySelector('canvas');
-const gl = canvas.getContext("webgl", {
-    preserveDrawBuffer: false,
-    antialias: false,
-    alpha: true,
-});
-
-
-
-function setupWebGL() {
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-}
-
-function createShader(type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error("fail to compile shader: ", gl.getShaderInfoLog(shader));
-        gl.deleteShader(shader);
-        return null;
-    }
-
-    return shader;
-}
-
 async function loadShaders() {
+        
     try {
         const [vertexResponse, fragmentResponse] = await Promise.all([
             fetch("./shaders/vertex.glsl"),
-            fetch("./shaders/fragment.glsl")
+            fetch("./shaders/fragment.glsl"),
         ]);
 
         const vertexSource = await vertexResponse.text();
         const fragmentSource = await fragmentResponse.text();
 
-        return {vertexSource, fragmentSource};
+        
+        return { vertexSource, fragmentSource };
     } catch (error) {
-        console.log("fail to load shader: ", error);
+        console.error("Shader Load Error: ", error);
         throw error;
-    }    
+    }
 }
 
-async function initWebGl() {
-    setupWebGL();
+function AddEvent(object, type, callback) {
+    if (object == null || typeof(object) == 'undifined') return;
+    if (object.addEventListener) {
+        object.addEventListener(type, callback, false);
+    } else if (object.attachEvent) {
+        object.attachEvent("on" + type, callback);
+    } else {
+        object["on"+type] = callback;
+    }
+}
 
-    const {vertexSource, fragmentSource} = await loadShaders();
+function RemoveEvent(object, type, callback) {
+    if (object == null || typeof(object) == 'undifined') return;
+    if (object.removeEventListener) {
+        object.removeEventListener(type, callback, false);
+    } else if (object.detachEvent) {
+        object.detachEvent("on" + type, callback);
+    } else {
+        object["on"+type] = callback;
+    }
+}
+
+
+async function main() {
+    AddEvent(window, 'resize', OnResizeWindow);
+
+    /** @type {HTMLCanvasElement|null})*/
+    const canvas = document.getElementById("canvas");
+    if (!canvas) {
+        console.log("failed to get canvas");
+        return;
+    } 
+    const gl = canvas.getContext('webgl2', {
+        preserveDrawingBuffer: false,
+        antialias: true,
+        alpha: true,
+    });
+
+    if(!gl) {
+        console.log("Browser Does Not Support WebGL 2, please get a better browser boze");
+        return;
+    }
+    
+
+    /* HELPER FUNCTIONS */
+    function createShader(type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+    
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error("Shader Compile Error: ", gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null
+        }
+        return shader; 
+    }
+
+    function OnResizeWindow() {
+        if (!canvas) {
+            return;
+        }
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    }
+
+    /*##################*/ 
+
+    const { vertexSource, fragmentSource } = await loadShaders();
+    
     const vertexShader = createShader(gl.VERTEX_SHADER, vertexSource);
     const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentSource);
-
-    program = gl.createProgram();
+    
+    const program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error("Shader Link Error: ", gl.getProgramInfoLog(program));
+        return;
+    }
 
-    gl.useProgram(program);
+    const vertexPositionAttribLocation = gl.getAttribLocation(program, 'vertexPosition');
+    if (vertexPositionAttribLocation < 0) {
+        console.error("Shader Parameter Error");
+        return;
+    }
 
-    const vertices = new Float32Array([
-        -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0,
-    ]);
 
-    const vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+    //Output merger
+    OnResizeWindow();
     
-    const positionLocation = gl.getAttribLocation(program, "aPosition");
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    const iChannel0Location = gl.getUniformLocation(program, "iChannel0");
-    gl.uniform1i(iChannel0Location, 0);
+
+    gl.clearColor(0.,0.,0.,1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    const triangleVertices = [
+        0.0, 0.5,
+        -0.5, -0.5,
+        0.5, -0.5
+    ];
+
+    const verticesCPUBuffer = new Float32Array(triangleVertices);
+    
+    const verticesGLBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, verticesGLBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, verticesCPUBuffer, gl.STATIC_DRAW);
+
+    
+
+
+
 }
 
-function updateTexture() {
-    const tempCanvas
+try {
+    main();
+} catch (e) {
+    console.log('Uncaught Javascript Expection', $(e));
 }
-
-
-
-
-
-
-
-// if (!gl) {
-//     console.log("using experimental webgl");
-//     gl = canvas.getContext('experimental-webgl');
-// }
-
-// if (!gl) {
-//     alert('Womp Womp get webgl');
-// }
-
-// gl.clearColor(1.0,0.8, 0.2, 1.0)
-// gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
