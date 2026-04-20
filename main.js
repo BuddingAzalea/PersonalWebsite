@@ -1,6 +1,6 @@
 /*Config Constants*/
-const GRASS_AMOUNT = 3000;
-
+const GRASS_AMOUNT = 100;
+const RES_SCALE = 4;
 
 
 // const grassdata = new Float32Array([
@@ -99,12 +99,12 @@ function generateGrassPoints() {
 
     var y_position = new Float32Array(GRASS_AMOUNT);
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        y_position[i] =  Math.floor(getRandomInRange(-15, gl.canvas.width));
+        y_position[i] =  Math.floor(getRandomInRange(-15, gl.canvas.width-76));
     }
     y_position.sort().reverse()
 
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        grassdata[i*3] = Math.floor(getRandomInRange(-15, gl.canvas.width));
+        grassdata[i*3] = Math.floor(getRandomInRange(-5, gl.canvas.width-3));
         grassdata[i*3+ 1] = y_position[i];
         grassdata[i*3+ 2] = Math.floor(getRandomInRange(0, 2.99));
     }
@@ -206,7 +206,7 @@ function grassDataGetter(program) {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     const uniformLocations = {
-        time:       gl.getUniformLocation(program, "time_value"),
+        time:       gl.getUniformLocation(program, "timeValue"),
         canvasSize: gl.getUniformLocation(program, "canvasSize"),
         sampler:    gl.getUniformLocation(program, "textureSample")
     }
@@ -345,6 +345,7 @@ async function main() {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         gl.useProgram(objs.grass.program);
+        gl.uniform1f(objs.grass.uniformLocations.time, performance.now()/1000);
         
         gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT);
 
