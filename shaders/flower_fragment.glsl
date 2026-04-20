@@ -6,15 +6,11 @@ in vec2 textureCoordF;
 in float instanceF;
 
 uniform sampler2DArray textureSample;
-uniform vec3 bottomColor;
-uniform vec3 topColor;
-
 out vec4 displayColor;
 
 
 void main() {
     // displayColor = vec4(textureCoord, instanceF, 1.0f);
     vec4 textureColor = texture(textureSample, vec3(textureCoordF, instanceF));
-    vec3 grassColor = mix(bottomColor, topColor, textureCoordF.y);
-    displayColor = vec4(grassColor, textureColor.a);
+    displayColor = vec4(1.0,0.0,0.0, 1.0);
 }

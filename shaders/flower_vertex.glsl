@@ -2,7 +2,7 @@
 precision mediump float;
 
 const float size = 16.0f;
-const float windStrength = 2.0f;
+const float windStrength = 1.0f;
 in vec2 vertexPosition;
 in vec2 textureCoordsV;
 in vec2 position;

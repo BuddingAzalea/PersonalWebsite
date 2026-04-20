@@ -1,5 +1,6 @@
 /*Config Constants*/
-const GRASS_AMOUNT = 100;
+const GRASS_AMOUNT = 2000;
+const FLOWER_AMOUNT = 10;
 const RES_SCALE = 4;
 
 
@@ -17,8 +18,6 @@ const RES_SCALE = 4;
 //     450, 200,    1,
 // ]);
 var grassdata = new Float32Array(GRASS_AMOUNT*3);
-
-
 const grassVertices = new Float32Array([
     0, 1,   0, 0.99,  
     0, 0,   0, 0, 
@@ -28,14 +27,21 @@ const grassVertices = new Float32Array([
     1, 1,   1, 0.99,
 ]);
 
-
+var flowerdata = new Float32Array(FLOWER_AMOUNT*3);
+const flowerVertices = new Float32Array([
+    0, 2,   0, 0.99,  
+    0, 0,   0, 0, 
+    1, 0,   1, 0,
+    0, 2,   0, 0.99,  
+    1, 0,   1, 0, 
+    1, 2,   1, 0.99,
+]);
 
 /*Global Variables*/
 /** @type {HTMLCanvasElement|null})*/
 var canvas;
 /** @type {WebGL2RenderingContext|null})*/
 var gl;
-
 //{ name:  program, vertex, fragment, attribs}
 var objs;
 
@@ -70,8 +76,7 @@ async function setUpGL() {
             return;
         } else {
             console.log("WebGL2 may be Disabled. Please change settings to view site");
-        }
-        
+        }   
     }
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -88,15 +93,23 @@ async function setUpObjects() {
             ...(await programInit(
                 "./shaders/grass_vertex.glsl", 
                 "./shaders/grass_fragment.glsl", 
-                grassDataGetter)),
+                grassDataGetter
+            ))
+        },
+        flower : {
+            ...(await programInit(
+                "./shaders/flower_vertex.glsl",
+                "./shaders/flower_fragment.glsl",
+                flowerDataGetter
+            ))
         }
+
     }
     console.log(objs)
 }
 
 
 function generateGrassPoints() {
-
     var y_position = new Float32Array(GRASS_AMOUNT);
     for (let i = 0; i < GRASS_AMOUNT; i++) {
         y_position[i] =  Math.floor(getRandomInRange(-15, gl.canvas.width-76));
@@ -104,11 +117,25 @@ function generateGrassPoints() {
     y_position.sort().reverse()
 
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        grassdata[i*3] = Math.floor(getRandomInRange(-5, gl.canvas.width-3));
+        grassdata[i*3] = Math.floor(getRandomInRange(-15, gl.canvas.width-3));
         grassdata[i*3+ 1] = y_position[i];
-        grassdata[i*3+ 2] = Math.floor(getRandomInRange(0, 2.99));
+        grassdata[i*3+ 2] = Math.floor(getRandomInRange(0, 5.99));
+    }  
+}
+
+
+function generateFlowerPoints() {
+    var y_position = new Float32Array(FLOWER_AMOUNT);
+    for (let i = 0; i < FLOWER_AMOUNT; i++) {
+        y_position[i] =  Math.floor(getRandomInRange(-15, gl.canvas.width-76));
     }
-    
+    y_position.sort().reverse()
+
+    for (let i = 0; i < FLOWER_AMOUNT; i++) {
+        grassdata[i*3] = Math.floor(getRandomInRange(-15, gl.canvas.width-3));
+        grassdata[i*3+ 1] = y_position[i];
+        grassdata[i*3+ 2] = 0;
+    }  
 }
 
 /*SHADER LOGIC*/
@@ -146,6 +173,7 @@ function createShader(type, source) {
 
 /* OBJECT HANDELING */
 function grassDataGetter(program) {
+    gl.useProgram(program);
     const attribLocations = {
         vertexPosition: gl.getAttribLocation(program, "vertexPosition"),
         textureCoords : gl.getAttribLocation(program, 'textureCoordsV'),
@@ -208,13 +236,88 @@ function grassDataGetter(program) {
     const uniformLocations = {
         time:       gl.getUniformLocation(program, "timeValue"),
         canvasSize: gl.getUniformLocation(program, "canvasSize"),
-        sampler:    gl.getUniformLocation(program, "textureSample")
+        sampler:    gl.getUniformLocation(program, "textureSample"),
+        colorB:     gl.getUniformLocation(program, "bottomColor"),
+        colorT:     gl.getUniformLocation(program, "topColor")
     }
-
+    
     loadGrassTexture(uniformLocations.sampler);
 
     return {attribLocations, uniformLocations};
 }
+
+function flowerDataGetter(program) {
+    gl.useProgram(program);
+    const attribLocations = {
+        vertexPosition: gl.getAttribLocation(program, "vertexPosition"),
+        textureCoords : gl.getAttribLocation(program, 'textureCoordsV'),
+        position      : gl.getAttribLocation(program, "position"),
+        instanceID    : gl.getAttribLocation(program, "instanceV")
+    }
+
+    const vertexBuffer = gl.createBuffer();
+    if (!vertexBuffer) {
+        console.error("Failed to allocate Buffer");
+        return null;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flowerVertices, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(attribLocations.vertexPosition);
+    gl.enableVertexAttribArray(attribLocations.textureCoords);
+
+    gl.vertexAttribPointer(
+        attribLocations.vertexPosition,
+        2, gl.FLOAT, false, 
+        16, 0 
+    );
+    gl.vertexAttribPointer(
+        attribLocations.textureCoords,
+        2, gl.FLOAT, false, 
+        16, 8 
+    );
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+
+
+    const dataBuffer = gl.createBuffer();
+    if (!dataBuffer) {
+        console.error("Failed to allocate Buffer");
+        return null;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, dataBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, grassdata, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(attribLocations.position);
+    gl.enableVertexAttribArray(attribLocations.instanceID);
+    
+    gl.vertexAttribPointer(
+        attribLocations.position,
+        2, gl.FLOAT, false, 
+        12, 0 
+    );
+    gl.vertexAttribPointer(
+        attribLocations.instanceID,
+        1, gl.FLOAT, false, 
+        12, 8 
+    );
+
+    gl.vertexAttribDivisor(attribLocations.position, 1);
+    gl.vertexAttribDivisor(attribLocations.instanceID, 1);
+    
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    const uniformLocations = {
+        time:       gl.getUniformLocation(program, "timeValue"),
+        canvasSize: gl.getUniformLocation(program, "canvasSize"),
+        sampler:    gl.getUniformLocation(program, "textureSample"),
+    }
+    
+    loadGrassTexture(uniformLocations.sampler);
+
+    return {attribLocations, uniformLocations};
+
+}
+
 
 
 async function programInit(vertex_url, fragment_url, dataGetter) {
@@ -324,30 +427,37 @@ function RemoveEvent(object, type, callback) {
 
 async function main() {
     //Set up
-    setUpCanvas()
+    setUpCanvas();
     await setUpGL();
-    generateGrassPoints();  
+    generateGrassPoints();
+    generateFlowerPoints();    
     await setUpObjects(); 
     grassdata = null;
     
     let lastFrameTime = performance.now();
 
-
     gl.useProgram(objs.grass.program)
     gl.uniform2f(objs.grass.uniformLocations.canvasSize, gl.canvas.width, gl.canvas.height);
-    
+    gl.uniform3fv(objs.grass.uniformLocations.colorB, [1/255, 6/255, 3/255]);
+    gl.uniform3fv(objs.grass.uniformLocations.colorT, [23/255, 26/255, 23/255]);
 
+
+    gl.useProgram(objs.flower.program)
+    gl.uniform2f(objs.flower.uniformLocations.canvasSize, gl.canvas.width, gl.canvas.height);
 
     function drawFrame() {
         //clear 
-        gl.clearColor(0.,0.,1.,1.0);
+        gl.clearColor(1/255, 6/255, 3/255,1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         gl.useProgram(objs.grass.program);
         gl.uniform1f(objs.grass.uniformLocations.time, performance.now()/1000);
-        
         gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT);
+
+
+        gl.useProgram(objs.flower.program);
+        gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, FLOWER_AMOUNT);
 
         requestAnimationFrame(drawFrame);
     }   
