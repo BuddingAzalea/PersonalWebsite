@@ -1,6 +1,5 @@
 /*Config Constants*/
-// const GRASS_SIZE = 10;
-const GRASS_AMOUNT = 1500;
+const GRASS_AMOUNT = 3000;
 
 
 
@@ -23,10 +22,10 @@ var grassdata = new Float32Array(GRASS_AMOUNT*3);
 const grassVertices = new Float32Array([
     0, 1,   0, 0.99,  
     0, 0,   0, 0, 
-    2, 0,   1, 0,
+    1, 0,   1, 0,
     0, 1,   0, 0.99,  
-    2, 0,   1, 0, 
-    2, 1,   1, 0.99,
+    1, 0,   1, 0, 
+    1, 1,   1, 0.99,
 ]);
 
 
@@ -100,14 +99,14 @@ function generateGrassPoints() {
 
     var y_position = new Float32Array(GRASS_AMOUNT);
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        y_position[i] =  Math.floor(getRandomInRange(-40, gl.canvas.width));
+        y_position[i] =  Math.floor(getRandomInRange(-15, gl.canvas.width));
     }
     y_position.sort().reverse()
 
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        grassdata[i*3] = Math.floor(getRandomInRange(-40, gl.canvas.width));
+        grassdata[i*3] = Math.floor(getRandomInRange(-15, gl.canvas.width));
         grassdata[i*3+ 1] = y_position[i];
-        grassdata[i*3+ 2] = Math.floor(getRandomInRange(0, 1.99));
+        grassdata[i*3+ 2] = Math.floor(getRandomInRange(0, 2.99));
     }
     
 }
@@ -257,7 +256,7 @@ async function loadGrassTexture(grassUnifLocation) {
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage3D( gl.TEXTURE_2D_ARRAY, 0, gl.RGBA, 
-        32, 16, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
+        16, 16, 6, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.uniform1i(grassUnifLocation, 0);
