@@ -108,12 +108,12 @@ async function setUpObjects() {
 function generateGrassPoints() {
     var y_position = new Float32Array(GRASS_AMOUNT);
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        y_position[i] =  Math.floor(getRandomInRange(-15, gl.canvas.height-2));
+        y_position[i] =  Math.floor(getRandomInRange(-20, gl.canvas.height-32));
     }
     y_position.sort().reverse()
 
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        grassdata[i*4] = Math.floor(getRandomInRange(-15, gl.canvas.width-2));
+        grassdata[i*4] = Math.floor(getRandomInRange(0, gl.canvas.width-16));
         grassdata[i*4+ 1] = y_position[i];
         if (Math.random() < FLOWER_FRACTION) {
             grassdata[i*4+ 2] = Math.floor(getRandomInRange(0,  2));
@@ -386,13 +386,13 @@ async function main() {
 
         for (let i=mouse_frame_index; i < GRASS_AMOUNT; i+=MOUSE_UPDATE_RATE) {
             var dist = (mouse_x-grassdata[i*4])*(mouse_x-grassdata[i*4]) + (mouse_y-grassdata[i*4+1])*(mouse_y-grassdata[i*4+1])
-            grassdata[i*4+3] = Math.max((dist < MOUSE_RANGE_SQUARED), grassdata[i*4+3])- LIVING_DECAY*dt;
+            grassdata[i*4+3] = Math.max((dist < MOUSE_RANGE_SQUARED), grassdata[i*4+3]);//- LIVING_DECAY*dt
         }
         mouse_frame_index = (mouse_frame_index + 1) % MOUSE_UPDATE_RATE;
 
         if (draw_frame_index == FRAME_RATE_SCALE) {
             draw_frame_index = 0;
-            gl.clearColor(1/255, 6/255, 3/255,1.0);
+            gl.clearColor(1/255, 6/255, 3/255,0.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             
