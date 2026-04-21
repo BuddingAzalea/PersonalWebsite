@@ -1,11 +1,11 @@
 /*Config Constants*/
-const GRASS_AMOUNT = 500;
-const FLOWER_FRACTION = 0.2;
+const GRASS_AMOUNT = 6000;
+const FLOWER_FRACTION = 0.1;
 const FRAME_RATE_SCALE = 2;
 const MOUSE_UPDATE_RATE = 10;
 const MOUSE_RANGE = 40;
 const MOUSE_RANGE_SQUARED = MOUSE_RANGE * MOUSE_RANGE
-const LIVING_DECAY = 1;
+const LIVING_DECAY = 5;
 const RES_SCALE = 4;
 
 
@@ -45,6 +45,7 @@ var objs;
 // var computes;
 var mouse_x = 0;
 var mouse_y = 0;
+var rect;
 
 
 /*INITIALIZATIONS*/
@@ -56,9 +57,11 @@ function setUpCanvas(){
         return;
     } 
 
-    const rect = canvas.getBoundingClientRect();
-    canvas.height = rect.height/4;
-    canvas.width = rect.width/4;
+    rect = canvas.getBoundingClientRect();
+    canvas.width = 432;
+    canvas.height = Math.floor(canvas.width * (9/16));
+    console.log(canvas.height);
+    
 }
 
 async function setUpGL() {
@@ -232,6 +235,8 @@ function grassDataGetter(program) {
         colorT:     gl.getUniformLocation(program, "topColorDead"),
         colorBL:     gl.getUniformLocation(program, "bottomColorLiving"),
         colorTL:     gl.getUniformLocation(program, "topColorLiving"),
+        colorBF:     gl.getUniformLocation(program, "flowerColorBright"),
+        colorTF:     gl.getUniformLocation(program, "flowerColorDark")
     }
     
     loadGrassTexture(uniformLocations.sampler);
@@ -355,8 +360,8 @@ async function main() {
 
 
     canvas.addEventListener("mousemove", (e) => {
-        mouse_x = e.offsetX/4-8;
-        mouse_y = gl.canvas.height - e.offsetY/4 - 10;
+        mouse_x = (e.offsetX/rect.width)*gl.canvas.width  -8;
+        mouse_y = gl.canvas.height - (e.offsetY/rect.height)*gl.canvas.height - 10;
     });
 
     
@@ -368,6 +373,8 @@ async function main() {
     gl.uniform3fv(objs.grass.uniformLocations.colorT, [23/255, 26/255, 23/255]);
     gl.uniform3fv(objs.grass.uniformLocations.colorBL, [1/255, 6/255, 3/255]);
     gl.uniform3fv(objs.grass.uniformLocations.colorTL, [49/255, 87/255, 59/255]);
+    gl.uniform3fv(objs.grass.uniformLocations.colorBF, [63/255, 65/255, 196/255]);
+    gl.uniform3fv(objs.grass.uniformLocations.colorTF, [114/255, 84/255, 171/255]);
     // gl.uniform3fv(objs.grass.uniformLocations.colorT, [1.0, 1.0, 1.0]);
     let draw_frame_index = 1;
     let mouse_frame_index = 0;

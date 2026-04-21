@@ -2,8 +2,8 @@
 precision mediump float;
 
 const float size = 16.0f;
-const float windStrengthGrass = 2.0f;
-const float windStrengthFlower = 0.5f;
+const float windStrengthGrass = 4.0f;
+const float windStrengthFlower = 1.0f;
 in vec2 vertexPosition;
 in vec2 textureCoordsV;
 
