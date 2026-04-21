@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="style.css">
     <script src="main.js" defer></script>
     <style>
         * {
-            background: rgb(239, 119, 255);
+            background: rgb(255, 0, 0);
         }
 
         #canvas {
@@ -16,8 +15,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 800px;
-            height: 500px;
+            width: 100%; 
+            aspect-ratio: 16 / 9;
             background: rgb(0, 0, 0);
             image-rendering: pixelated;
         }
@@ -34,11 +33,11 @@
 </head>
 <body>
     <canvas id="canvas"></canvas>
-    <p>test</p>
-    <canvas id="frame"></canvas>
+    <!-- <p>test</p> -->
+    <!-- <canvas id="frame"></canvas> -->
 </body>
 </html>
 <!-- 
-    width: 1440px;
-    height: 920px; 
+            width: 800px;
+            height: 500px;
 -->
