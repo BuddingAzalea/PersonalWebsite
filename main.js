@@ -4,6 +4,7 @@ const FLOWER_FRACTION = 0.1;
 const FRAME_RATE_SCALE = 2;
 const MOUSE_UPDATE_RATE = 10;
 const MOUSE_RANGE = 40;
+const SIDE_BUFFER = 10;
 const MOUSE_RANGE_SQUARED = MOUSE_RANGE * MOUSE_RANGE
 const LIVING_DECAY = 5;
 const RES_SCALE = 4;
@@ -35,6 +36,9 @@ const grassVertices = new Float32Array([
     1, 2,   1, 0.99,
 ]);
 
+
+
+
 /*Global Variables*/
 /** @type {HTMLCanvasElement|null})*/
 var canvas;
@@ -58,7 +62,7 @@ function setUpCanvas(){
     } 
 
     rect = canvas.getBoundingClientRect();
-    canvas.width = 432;
+    canvas.width = 448;
     canvas.height = Math.floor(canvas.width * (9/16));
     console.log(canvas.height);
     
@@ -99,6 +103,13 @@ async function setUpObjects() {
                 "./shaders/grass_fragment.glsl", 
                 grassDataGetter
             ))
+        },
+        obj : {
+            ...(await programInit(
+                "./shaders/objs_vertex.glsl", 
+                "./shaders/objs_fragment.glsl",
+                objDataGetter
+            ))
         }
     }
     console.log(objs)
@@ -108,12 +119,12 @@ async function setUpObjects() {
 function generateGrassPoints() {
     var y_position = new Float32Array(GRASS_AMOUNT);
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        y_position[i] =  Math.floor(getRandomInRange(-20, gl.canvas.height-32));
+        y_position[i] =  Math.floor(getRandomInRange(-6, 214-6));
     }
     y_position.sort().reverse()
 
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        grassdata[i*4] = Math.floor(getRandomInRange(0, gl.canvas.width-16));
+        grassdata[i*4] = Math.floor(getRandomInRange(SIDE_BUFFER, gl.canvas.width-15-SIDE_BUFFER));
         grassdata[i*4+ 1] = y_position[i];
         if (Math.random() < FLOWER_FRACTION) {
             grassdata[i*4+ 2] = Math.floor(getRandomInRange(0,  2));
@@ -243,6 +254,52 @@ function grassDataGetter(program) {
 
     return {attribLocations, uniformLocations, dataBuffer};
 }
+
+
+function objDataGetter(program) {
+    gl.useProgram(program);
+    const attribLocations = {
+        vertexPosition: gl.getAttribLocation(program, "vertexPosition"),
+        textureCoords : gl.getAttribLocation(program, 'textureCoordsV')
+    }
+
+    const vertexBuffer = gl.createBuffer();
+    if (!vertexBuffer) {
+        console.error("Failed to allocate Buffer");
+        return null;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, grassVertices, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(attribLocations.vertexPosition);
+    gl.enableVertexAttribArray(attribLocations.textureCoords);
+
+
+    gl.vertexAttribPointer(
+        attribLocations.vertexPosition,
+        2, gl.FLOAT, false, 
+        16, 0 
+    );
+    gl.vertexAttribPointer(
+        attribLocations.textureCoords,
+        2, gl.FLOAT, false, 
+        16, 8 
+    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    const uniformLocations = {
+        canvasSize: gl.getUniformLocation(program, "canvasSize"),
+        sampler   : gl.getUniformLocation(program, "textureSample"),
+        position  : gl.getUniformLocation(program, "position"),
+        size      : gl.getUniformLocation(program, "size")
+    }
+    
+    // loadGrassTexture(uniformLocations.sampler);
+
+    return {attribLocations, uniformLocations};
+}
+
+
+
 
 
 async function programInit(vertex_url, fragment_url, dataGetter) {
@@ -375,6 +432,12 @@ async function main() {
     gl.uniform3fv(objs.grass.uniformLocations.colorTL, [49/255, 87/255, 59/255]);
     gl.uniform3fv(objs.grass.uniformLocations.colorBF, [63/255, 65/255, 196/255]);
     gl.uniform3fv(objs.grass.uniformLocations.colorTF, [114/255, 84/255, 171/255]);
+
+
+
+
+
+
     // gl.uniform3fv(objs.grass.uniformLocations.colorT, [1.0, 1.0, 1.0]);
     let draw_frame_index = 1;
     let mouse_frame_index = 0;
@@ -386,13 +449,13 @@ async function main() {
 
         for (let i=mouse_frame_index; i < GRASS_AMOUNT; i+=MOUSE_UPDATE_RATE) {
             var dist = (mouse_x-grassdata[i*4])*(mouse_x-grassdata[i*4]) + (mouse_y-grassdata[i*4+1])*(mouse_y-grassdata[i*4+1])
-            grassdata[i*4+3] = Math.max((dist < MOUSE_RANGE_SQUARED), grassdata[i*4+3]);//- LIVING_DECAY*dt
+            grassdata[i*4+3] = Math.max((dist < MOUSE_RANGE_SQUARED), grassdata[i*4+3])- LIVING_DECAY*dt;//
         }
         mouse_frame_index = (mouse_frame_index + 1) % MOUSE_UPDATE_RATE;
 
         if (draw_frame_index == FRAME_RATE_SCALE) {
             draw_frame_index = 0;
-            gl.clearColor(1/255, 6/255, 3/255,0.0);
+            gl.clearColor(0/255, 0/255, 0/255, 0.00);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             
@@ -401,8 +464,12 @@ async function main() {
             gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata);
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
             gl.uniform1f(objs.grass.uniformLocations.time, performance.now()/1000);
-
             gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT);
+
+
+
+
+
         }
         draw_frame_index++;
 

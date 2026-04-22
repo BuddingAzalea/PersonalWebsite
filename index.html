@@ -7,27 +7,27 @@
     <script src="main.js" defer></script>
     <style>
         * {
-            background: rgb(57, 235, 220);
+            background: rgb(6, 1, 1);
             overflow: hidden;
         }
 
         #canvas {
-            position: absolute;
-            top: 50.125%;
+            position: relative;
+            top: 45.774%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 50%; 
+            width: 100%; 
             aspect-ratio: 16 / 9;
-            background: rgba(183, 1, 255, 0);
+            background: rgba(0, 0, 0, 0);
             image-rendering: pixelated;
         }
         #frame {
             position: absolute;
             top: 50%;
-            left: 55%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            width: 150%;
-            height: 150%;
+            width: 100%;
+            aspect-ratio: 1 / 1 ;
             background:  url('./assets/background.png') no-repeat;
             image-rendering: pixelated;
             background-position: center;
@@ -38,7 +38,7 @@
 <body>
     <div id="frame">
         <canvas id="canvas"></canvas>
-    </div><!-- <p>test</p> -->
+    </div>
     
 </body>
 </html>
