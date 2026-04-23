@@ -37,6 +37,32 @@ const grassVertices = new Float32Array([
 ]);
 
 
+class basicObj {
+    
+    texture = null;
+
+    constructor(position, size, uniformLocations) {
+        this.position = position;
+        this.size = size;
+        this.uniformLocations = uniformLocations
+    }
+
+    async loadTextures(texture_link) {
+        this.texture = await loadObjTexture(texture_link, this.size);
+    }
+
+    drawObject(textureIndex) {
+
+        gl.uniform1i(this.uniformLocations.sampler, textureIndex);
+        gl.activeTexture(gl.TEXTURE0 + textureIndex);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        
+        gl.uniform2f(this.uniformLocations.position, ...this.position);
+        gl.uniform2f(this.uniformLocations.size, this.size[0], this.size[1]*0.5);
+        gl.drawArrays(gl.TRIANGLES, 0 , 6);
+    }
+}
+
 
 
 /*Global Variables*/
@@ -64,7 +90,6 @@ function setUpCanvas(){
     rect = canvas.getBoundingClientRect();
     canvas.width = 448;
     canvas.height = Math.floor(canvas.width * (9/16));
-    console.log(canvas.height);
     
 }
 
@@ -104,7 +129,7 @@ async function setUpObjects() {
                 grassDataGetter
             ))
         },
-        obj : {
+        basicObj : {
             ...(await programInit(
                 "./shaders/objs_vertex.glsl", 
                 "./shaders/objs_fragment.glsl",
@@ -112,7 +137,6 @@ async function setUpObjects() {
             ))
         }
     }
-    console.log(objs)
 }
 
 
@@ -288,12 +312,10 @@ function objDataGetter(program) {
 
     const uniformLocations = {
         canvasSize: gl.getUniformLocation(program, "canvasSize"),
-        sampler   : gl.getUniformLocation(program, "textureSample"),
+        sampler   : gl.getUniformLocation(program, "uSampler"),
         position  : gl.getUniformLocation(program, "position"),
         size      : gl.getUniformLocation(program, "size")
     }
-    
-    // loadGrassTexture(uniformLocations.sampler);
 
     return {attribLocations, uniformLocations};
 }
@@ -344,10 +366,31 @@ async function loadGrassTexture(grassUnifLocation) {
         16, 32, 6, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    // gl.bindTextureUnit(0, gl.TEXTURE_2D_ARRAY);
     gl.uniform1i(grassUnifLocation, 0);
+    // gl.bindTexture(gl.TEXTURE_2D_ARRAY, null);
     
     return texture;
 }
+
+async function loadObjTexture(link, size) {
+    const image = await loadImage(link);
+
+    const texture = gl.createTexture();
+    
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 
+        ...size, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    // gl.activeTexture(gl.TEXTURE0 + textureIndex);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    return texture;
+}
+
+
 
 function setUpBuffer(data, attribLocation, size, type, normalize, stride, offset) {
     const buffer = gl.createBuffer();
@@ -433,23 +476,72 @@ async function main() {
     gl.uniform3fv(objs.grass.uniformLocations.colorBF, [63/255, 65/255, 196/255]);
     gl.uniform3fv(objs.grass.uniformLocations.colorTF, [114/255, 84/255, 171/255]);
 
-
-
-
-
+    gl.useProgram(objs.basicObj.program);
+    gl.uniform2f(objs.basicObj.uniformLocations.canvasSize, gl.canvas.width, gl.canvas.height);
+    
+    
+    
+    let sheep = new basicObj(
+        [200,100],
+        [10, 40],
+        objs.basicObj.uniformLocations
+    );
+    
+    let staticObjs = [
+        new basicObj([100,20],[10, 40],objs.basicObj.uniformLocations),
+        new basicObj([100,130],[10, 40],objs.basicObj.uniformLocations),
+        new basicObj([250,90],[10, 40],objs.basicObj.uniformLocations),
+        new basicObj([300,200],[10, 40],objs.basicObj.uniformLocations)
+    ];
+    
+    await sheep.loadTextures("./assets/sheep.png");
+    for (let i=0; i < staticObjs.length; i++) {
+        await staticObjs[i].loadTextures("./assets/sheep.png");
+    }
 
     // gl.uniform3fv(objs.grass.uniformLocations.colorT, [1.0, 1.0, 1.0]);
     let draw_frame_index = 1;
     let mouse_frame_index = 0;
+    let breaks = new Int16Array(staticObjs.length +1);
+    breaks[staticObjs.length] = GRASS_AMOUNT;  
+    
+    staticObjs.sort((a,b) => b.position[1] - a.position[1])
+
+
+    let static_index = 0;
+    let current_height = staticObjs[static_index].position[1];
+    console.log(current_height);
+    for (let i=0; i < GRASS_AMOUNT-1; i++) {
+        let add_break = false;
+        if (grassdata[i*4+1] < current_height) { 
+            breaks[static_index+1] = i;
+            add_break = true;
+        } else if ((grassdata[i*4+1] >= current_height) && (grassdata[i*4+5] < current_height)) {
+            breaks[static_index+1] = i+1;
+            add_break = true;
+        } else if (i == GRASS_AMOUNT-2) {
+            breaks[static_index+1] = GRASS_AMOUNT;
+            add_break = true;
+        }
+        if (add_break) {
+            i--;
+            static_index +=1;
+            if (static_index == staticObjs.length) {
+                break;
+            }
+            current_height = staticObjs[static_index].position[1];
+        }
+    }
+    console.log(breaks[breaks.length -1]);
+
     function drawFrame() {
         let currentFrameTime = performance.now()/1000;
         dt = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
-
         for (let i=mouse_frame_index; i < GRASS_AMOUNT; i+=MOUSE_UPDATE_RATE) {
             var dist = (mouse_x-grassdata[i*4])*(mouse_x-grassdata[i*4]) + (mouse_y-grassdata[i*4+1])*(mouse_y-grassdata[i*4+1])
-            grassdata[i*4+3] = Math.max((dist < MOUSE_RANGE_SQUARED), grassdata[i*4+3])- LIVING_DECAY*dt;//
+            grassdata[i*4+3] = Math.max((dist < MOUSE_RANGE_SQUARED), grassdata[i*4+3]);//- LIVING_DECAY*dt
         }
         mouse_frame_index = (mouse_frame_index + 1) % MOUSE_UPDATE_RATE;
 
@@ -458,18 +550,50 @@ async function main() {
             gl.clearColor(0/255, 0/255, 0/255, 0.00);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-            
+
+            gl.useProgram(objs.grass.program);
+            gl.uniform1f(objs.grass.uniformLocations.time, performance.now()/1000);
+
+
+            for (let k = 0; k < staticObjs.length; k++) {
+                gl.useProgram(objs.grass.program);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
+                gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata.slice(breaks[k]*4, breaks[k+1]*4));
+                gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, breaks[k+1]-breaks[k]);
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+
+                gl.useProgram(objs.basicObj.program);
+                staticObjs[k].drawObject(1);
+            }
+
             gl.useProgram(objs.grass.program);
             gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
-            gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata.slice(breaks[breaks.length -1]*4, GRASS_AMOUNT*4));
+            gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT-breaks[breaks.length -1]);
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
-            gl.uniform1f(objs.grass.uniformLocations.time, performance.now()/1000);
-            gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT);
 
+            // gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
+            // gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata.slice(breaks[k]*4, breaks[k+1]*4));
+            // gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, breaks[k+1]-breaks[k]);
+            // gl.bindBuffer(gl.ARRAY_BUFFER, null);
+            
 
+            // gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
+            // gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata.slice(20*4, 30*4));
+            // gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, 10);
+            // gl.bindBuffer(gl.ARRAY_BUFFER, null);
+            
+            // gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
+            // gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata);
+            // gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT);
+            // gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-
-
+            // gl.useProgram(objs.basicObj.program);
+            // sheep.drawObject(1);
+        } else {
+            
         }
         draw_frame_index++;
 

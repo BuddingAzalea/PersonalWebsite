@@ -9,6 +9,7 @@ out vec2 textureCoordF;
 uniform vec2 position;
 uniform vec2 canvasSize;
 uniform vec2 size;
+uniform float test;
 
 void main() {
     vec2 targetVertexPosition = vertexPosition * size + position;

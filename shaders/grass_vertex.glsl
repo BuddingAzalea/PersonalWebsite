@@ -17,7 +17,6 @@ out float flowerTimerF;
 out float test;
 
 uniform vec2 canvasSize;
-
 uniform float timeValue;
 
 void noiseFunction(in float x, in float y, in float t, out float val) {
