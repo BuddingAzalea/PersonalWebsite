@@ -143,12 +143,12 @@ async function setUpObjects() {
 function generateGrassPoints() {
     var y_position = new Float32Array(GRASS_AMOUNT);
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        y_position[i] =  Math.floor(getRandomInRange(-6, 214-6));
+        y_position[i] =  Math.floor(getRandomInRange(-32, gl.canvas.height));
     }
     y_position.sort().reverse()
 
     for (let i = 0; i < GRASS_AMOUNT; i++) {
-        grassdata[i*4] = Math.floor(getRandomInRange(SIDE_BUFFER, gl.canvas.width-15-SIDE_BUFFER));
+        grassdata[i*4] = Math.floor(getRandomInRange(-15, gl.canvas.width));
         grassdata[i*4+ 1] = y_position[i];
         if (Math.random() < FLOWER_FRACTION) {
             grassdata[i*4+ 2] = Math.floor(getRandomInRange(0,  2));
@@ -460,6 +460,7 @@ async function main() {
 
 
     canvas.addEventListener("mousemove", (e) => {
+        rect = canvas.getBoundingClientRect()
         mouse_x = (e.offsetX/rect.width)*gl.canvas.width  -8;
         mouse_y = gl.canvas.height - (e.offsetY/rect.height)*gl.canvas.height - 10;
     });
@@ -482,7 +483,7 @@ async function main() {
     
     
     let sheep = new basicObj(
-        [200,100],
+        [200,50],
         [10, 40],
         objs.basicObj.uniformLocations
     );
@@ -491,7 +492,7 @@ async function main() {
         new basicObj([100,20],[10, 40],objs.basicObj.uniformLocations),
         new basicObj([100,130],[10, 40],objs.basicObj.uniformLocations),
         new basicObj([250,90],[10, 40],objs.basicObj.uniformLocations),
-        new basicObj([300,200],[10, 40],objs.basicObj.uniformLocations)
+        new basicObj([300,200],[10, 40],objs.basicObj.uniformLocations),
     ];
     
     await sheep.loadTextures("./assets/sheep.png");
@@ -500,10 +501,10 @@ async function main() {
     }
 
     // gl.uniform3fv(objs.grass.uniformLocations.colorT, [1.0, 1.0, 1.0]);
-    let draw_frame_index = 1;
+    let draw_frame_index = 0;
     let mouse_frame_index = 0;
-    let breaks = new Int16Array(staticObjs.length +1);
-    breaks[staticObjs.length] = GRASS_AMOUNT;  
+    let staticBreaks = new Int16Array(staticObjs.length +1);
+    staticBreaks[staticObjs.length] = GRASS_AMOUNT;  
     
     staticObjs.sort((a,b) => b.position[1] - a.position[1])
 
@@ -511,16 +512,17 @@ async function main() {
     let static_index = 0;
     let current_height = staticObjs[static_index].position[1];
     console.log(current_height);
+
     for (let i=0; i < GRASS_AMOUNT-1; i++) {
         let add_break = false;
         if (grassdata[i*4+1] < current_height) { 
-            breaks[static_index+1] = i;
+            staticBreaks[static_index+1] = i;
             add_break = true;
         } else if ((grassdata[i*4+1] >= current_height) && (grassdata[i*4+5] < current_height)) {
-            breaks[static_index+1] = i+1;
+            staticBreaks[static_index+1] = i+1;
             add_break = true;
         } else if (i == GRASS_AMOUNT-2) {
-            breaks[static_index+1] = GRASS_AMOUNT;
+            staticBreaks[static_index+1] = GRASS_AMOUNT;
             add_break = true;
         }
         if (add_break) {
@@ -532,7 +534,11 @@ async function main() {
             current_height = staticObjs[static_index].position[1];
         }
     }
-    console.log(breaks[breaks.length -1]);
+    let breaks = [...staticBreaks];
+    let allObjects = [...staticObjs];
+    console.log(breaks);
+
+
 
     function drawFrame() {
         let currentFrameTime = performance.now()/1000;
@@ -555,7 +561,7 @@ async function main() {
             gl.uniform1f(objs.grass.uniformLocations.time, performance.now()/1000);
 
 
-            for (let k = 0; k < staticObjs.length; k++) {
+            for (let k = 0; k < allObjects.length; k++) {
                 gl.useProgram(objs.grass.program);
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
@@ -565,7 +571,7 @@ async function main() {
 
 
                 gl.useProgram(objs.basicObj.program);
-                staticObjs[k].drawObject(1);
+                allObjects[k].drawObject(1);
             }
 
             gl.useProgram(objs.grass.program);
@@ -593,11 +599,36 @@ async function main() {
             // gl.useProgram(objs.basicObj.program);
             // sheep.drawObject(1);
         } else {
+            // breaks = [0,...staticBreaks];
+            // allObjects = [sheep,...staticObjs];
+            let sheep_index = 0;
+            for (let k = 0; k < staticObjs.length; k++) {
+                // console.log(staticObjs[k].position[1]);
+                if (staticObjs[k].position[1] > sheep.position[1]) {
+                    sheep_index = k+1;
+                }
+            }
+            allObjects = [...staticObjs.slice(0,sheep_index), sheep, ...staticObjs.slice(sheep_index)];
+            sheepBreakPoint = staticBreaks[sheep_index];
+            for (let i=staticBreaks[sheep_index]; i < GRASS_AMOUNT-1; i++) {
+                if (grassdata[i*4+1] < sheep.position[1]) { 
+                    sheepBreakPoint = i;
+                    break;
+                } else if  (grassdata[i*4+5] < sheep.position[1]) {
+                    sheepBreakPoint = i+1;
+                    break;
+                } else if (i == GRASS_AMOUNT-2) {
+                    sheepBreakPoint = GRASS_AMOUNT;
+                    break;
+                }
+            }
+            breaks = [...staticBreaks.slice(0,sheep_index+1), sheepBreakPoint, ...staticBreaks.slice(sheep_index+1)];
+            console.log(breaks);
+            console.log(allObjects);
             
         }
-        draw_frame_index++;
-
         requestAnimationFrame(drawFrame);
+        draw_frame_index++;
     }   
     
     requestAnimationFrame(drawFrame);
