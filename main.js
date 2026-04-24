@@ -625,6 +625,7 @@ async function main() {
             breaks = [...staticBreaks.slice(0,sheep_index+1), sheepBreakPoint, ...staticBreaks.slice(sheep_index+1)];
             console.log(breaks);
             console.log(allObjects);
+            //test
             
         }
         requestAnimationFrame(drawFrame);
