@@ -1,8 +1,8 @@
 #version 300 es
 precision mediump float;
 
-const float size = 16.0f;
-const float windStrengthGrass = 4.0f;
+const vec2 size = vec2(16.0f, 16.0f);
+const float windStrengthGrass = 1.5f;
 const float windStrengthFlower = 2.0f;
 in vec2 vertexPosition;
 in vec2 textureCoordsV;
@@ -14,18 +14,17 @@ in float flowerTimerV;
 out vec2 textureCoordF;
 out float instanceF;
 out float flowerTimerF;
-out float test;
 
 uniform vec2 canvasSize;
 uniform float timeValue;
 
 void noiseFunction(in float x, in float y, in float t, out float val) {
-    val = sin(0.005f * (x * 0.13f + y) + t) - 0.5f * cos(0.02f * (x + 0.5f * y) + 2.6f * t - 1.32f) + 0.25f * cos(0.034f * y + t) * sin(0.05f - t + 0.64f) + 2.*sin(x + y);
+    val = sin(0.005f * (x * 0.13f + y) + t) - 0.5f * cos(0.02f * (x + 0.5f * y) + 2.6f * t - 1.32f) + 0.25f * cos(0.034f * y + t) * sin(0.05f - t + 0.64f) + 2.f * sin(x + y);
 }
 
 void main() {
     float noisevalues = 0.f;
-    float isFlower = float(instanceV < 2.0);
+    float isFlower = float(instanceV < 2.0f);
 
     float windStrength = mix(windStrengthGrass, windStrengthFlower, isFlower);
     noiseFunction(position.x, position.y, timeValue, noisevalues);
@@ -38,6 +37,5 @@ void main() {
 
     textureCoordF = textureCoordsV;
     instanceF = instanceV;
-    flowerTimerF = flowerTimerV;
-    test = float(instanceF < 2.0);
+    flowerTimerF = flowerTimerV * 0.001f;
 }

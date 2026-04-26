@@ -4,42 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script src="main.js" defer></script>
+    <script src="scripts/home.js" defer></script>
     <style>
         * {
-            background: rgb(6, 1, 1);
+            background: rgb(0, 0, 0);
             overflow: hidden;
         }
-
-        #canvas {
-            position: relative;
+        #main {
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             height: 100%; 
             aspect-ratio: 16 / 9;
-            background: rgba(0, 0, 0, 0);
+            background: rgb(0, 0, 0);
             image-rendering: pixelated;
-        }
-        #frame {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            height: 100%;
-            aspect-ratio: 2 / 1 ;
-            background:  url('./assets/background.png') no-repeat;
-            image-rendering: pixelated;
-            background-position: center;
-            background-size: 100%;
+            
         }
     </style>
 </head>
 <body>
-    <div id="frame">
-        <canvas id="canvas"></canvas>
-    </div>
-    
+    <canvas id="main"></canvas>
 </body>
 </html>
 <!-- 

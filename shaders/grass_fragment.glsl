@@ -5,7 +5,6 @@ precision mediump sampler2DArray;
 in vec2 textureCoordF;
 in float instanceF;
 in float flowerTimerF;
-in float test;
 
 uniform sampler2DArray textureSample;
 uniform vec3 bottomColorDead;
@@ -19,7 +18,7 @@ out vec4 displayColor;
 
 void main() {
     // displayColor = vec4(textureCoord, instanceF, 1.0f);
-    float isFlower = float(instanceF < 2.0f);
+    float isFlower = float(instanceF < 4.0f);
     vec4 textureColor = texture(textureSample, vec3(textureCoordF, instanceF));
 
     //Grass
@@ -47,6 +46,6 @@ void main() {
     vec3 colors = mix(grassColor, combinedColor, isFlower);
     // vec3 colors=vec3(test, 0.0, 0.0);
     float alpha = mix(textureColor.a, combinedAlpha, isFlower);
-    
+
     displayColor = vec4(colors, alpha);
 }
