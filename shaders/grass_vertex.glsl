@@ -1,7 +1,7 @@
 #version 300 es
 precision mediump float;
 
-const vec2 size = vec2(16.0f, 16.0f);
+const vec2 size = vec2(16.0f, 32.0f);
 const float windStrengthGrass = 1.5f;
 const float windStrengthFlower = 2.0f;
 in vec2 vertexPosition;
@@ -24,7 +24,7 @@ void noiseFunction(in float x, in float y, in float t, out float val) {
 
 void main() {
     float noisevalues = 0.f;
-    float isFlower = float(instanceV < 2.0f);
+    float isFlower = float(instanceV < 3.0f);
 
     float windStrength = mix(windStrengthGrass, windStrengthFlower, isFlower);
     noiseFunction(position.x, position.y, timeValue, noisevalues);

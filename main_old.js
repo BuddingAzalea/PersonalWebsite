@@ -82,7 +82,7 @@ var rect;
 /*INITIALIZATIONS*/
 function setUpCanvas(){
     
-    canvas = document.getElementById("canvas");
+    canvas = document.getElementById("main");
     if (!canvas) {
         console.log("failed to get canvas");
         return;
@@ -391,8 +391,6 @@ async function loadObjTexture(link, size) {
     return texture;
 }
 
-
-
 function setUpBuffer(data, attribLocation, size, type, normalize, stride, offset) {
     const buffer = gl.createBuffer();
     if (!buffer) {
@@ -554,7 +552,6 @@ async function main() {
         mouse_frame_index = (mouse_frame_index + 1) % MOUSE_UPDATE_RATE;
 
         if (draw_frame_index == FRAME_RATE_SCALE) {
-            let grassDataBuffer = new Int16Array();
             draw_frame_index = 0;
             gl.clearColor(0/255, 0/255, 0/255, 0.00);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -565,28 +562,23 @@ async function main() {
 
 
             for (let k = 0; k < allObjects.length; k++) {
-                // grassDataUpdateBuffer.splice(0, (breaks[k+1]-breaks[k])*4, 1);//...grassdata.slice(breaks[k]*4, breaks[k+1]*4)
-                // grassDataUpdateBuffer.fill(0, (breaks[k+1]-breaks[k])*4)
 
 
-                // gl.useProgram(objs.grass.program);
+                gl.useProgram(objs.grass.program);
 
-                // gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
-                // // gl.bufferSubData(gl.ARRAY_BUFFER, 0, );
-                // gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata);
-                // gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, breaks[k+1]-breaks[k]);
-                // gl.bindBuffer(gl.ARRAY_BUFFER, null);
+                gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
+                gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata.subarray(breaks[k]*4, breaks[k+1]*4));
+                gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, breaks[k+1]-breaks[k]);
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-
-                // gl.useProgram(objs.basicObj.program);
-                // allObjects[k].drawObject(1);
+                gl.useProgram(objs.basicObj.program);
+                allObjects[k].drawObject(1);
             }
 
             gl.useProgram(objs.grass.program);
             gl.bindBuffer(gl.ARRAY_BUFFER, objs.grass.dataBuffer);
-            // gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata.slice(breaks[breaks.length -1]*4, GRASS_AMOUNT*4));
-            gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata);
-            gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT);//-breaks[breaks.length -1]
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, grassdata.subarray(breaks[breaks.length -1]*4, GRASS_AMOUNT*4));
+            gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, GRASS_AMOUNT-breaks[breaks.length -1]);
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
         } else {

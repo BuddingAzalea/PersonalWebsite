@@ -5,6 +5,7 @@ precision mediump sampler2DArray;
 in vec2 textureCoordF;
 
 uniform sampler2D uSampler;
+uniform float alphaScale;
 
 out vec4 displayColor;
 
@@ -12,5 +13,5 @@ void main() {
     // displayColor = vec4(textureCoord, instanceF, 1.0f);
     vec4 textureColor = texture(uSampler, textureCoordF);
 
-    displayColor = textureColor;
+    displayColor = vec4(textureColor.rgb, textureColor.a * alphaScale);
 }

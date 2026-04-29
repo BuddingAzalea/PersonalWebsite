@@ -18,7 +18,7 @@ out vec4 displayColor;
 
 void main() {
     // displayColor = vec4(textureCoord, instanceF, 1.0f);
-    float isFlower = float(instanceF < 4.0f);
+    float isFlower = float(instanceF < 3.0f);
     vec4 textureColor = texture(textureSample, vec3(textureCoordF, instanceF));
 
     //Grass
