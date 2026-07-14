@@ -322,9 +322,6 @@ function objDataGetter(program) {
 }
 
 
-
-
-
 async function programInit(vertex_url, fragment_url, dataGetter) {
     const { vertexSource, fragmentSource } = await loadShaders(vertex_url, fragment_url);
     const vertexShader = createShader(gl.VERTEX_SHADER, vertexSource);

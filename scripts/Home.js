@@ -27,6 +27,7 @@ var grassdata = new Int16Array(GRASS_AMOUNT*4);
 var mouse_x = 224;
 var mouse_y = 126;
 var rect;
+var objs = {};
 
 var spriteProperties;
 var grassProperties;
@@ -312,14 +313,14 @@ function generateGrassPoints() {
         grassdata[i*4] = Math.floor(getRandomInRange(-15, gl.canvas.width));
         grassdata[i*4+ 1] = y_position[i];
         if (Math.random() < FLOWER_FRACTION) {
-            grassdata[i*4+ 2] = Math.floor(getRandomInRange(1,  3));
+            grassdata[i*4+ 2] = Math.floor(getRandomInRange(0,  3));
         } else {
             grassdata[i*4+ 2] = Math.floor(getRandomInRange(3,  7));
         }
         grassdata[i*4+ 3] = 0;   
     }  
 
-    grassdata[centerFlower*4] = 210;
+    grassdata[centerFlower*4] = 207;
     grassdata[centerFlower*4+ 2] = 0;
     grassdata[centerFlower*4+ 3] = 1000; 
 }
@@ -351,14 +352,15 @@ class spriteObj {
 
 /*OPEN*/
 async function openSetput() {
-    const eye = new spriteObj(EYE_CENTER);
-    const head = new spriteObj([0,0]);
+    objs.eye = new spriteObj(EYE_CENTER);;
+    objs.head = new spriteObj([0,0]);;
+
     let targetEyePosition = EYE_CENTER
 
-    eye.position = EYE_CENTER;
+    objs.eye.position = EYE_CENTER;
 
-    await eye.loadTextures("./assets/eye2.png");
-    await head.loadTextures("./assets/eye.png");
+    await objs.eye.loadTextures("./assets/eye2.png");
+    await objs.head.loadTextures("./assets/eye.png");
 
     let lastFrameTime = performance.now()/1000;
     let currentFrameTime = 0;
@@ -367,7 +369,7 @@ async function openSetput() {
 
     gl.useProgram(grassProperties.program)
     gl.uniform3fv(grassProperties.uniformLocations.colorB, [0/255, 0/255, 0/255]);
-    gl.uniform3fv(grassProperties.uniformLocations.colorT, [7/255, 10/255, 7/255]);
+    gl.uniform3fv(grassProperties.uniformLocations.colorT, [10/255, 16/255, 10/255]);
     gl.uniform3fv(grassProperties.uniformLocations.colorBL, [1/255, 6/255, 3/255]);
     gl.uniform3fv(grassProperties.uniformLocations.colorTL, [49/255, 87/255, 59/255]);
     gl.uniform3fv(grassProperties.uniformLocations.colorBF, [63/255, 65/255, 196/255]);
@@ -393,9 +395,8 @@ async function openSetput() {
 
             gl.useProgram(spriteProperties.program);
             
-            eye.drawObject(1);
-            head.drawObject(1);
-
+            objs.eye.drawObject(1);
+            objs.head.drawObject(1);
 
             drawFrameIndex = 0;
         } else {
@@ -404,9 +405,9 @@ async function openSetput() {
                 Math.min(Math.max(Math.floor(EYE_CENTER[0] + mouseCenterOffset[0]),EYE_CENTER[0]- EYE_RANGE[0]) ,EYE_CENTER[0]+ EYE_RANGE[0]),
                 Math.min(Math.max(Math.floor(EYE_CENTER[1] + mouseCenterOffset[1]),EYE_CENTER[1]- EYE_RANGE[1]) ,EYE_CENTER[1]+ EYE_RANGE[1])
             ];
-            eye.position = [
-                Math.floor((targetEyePosition[0]-eye.position[0])*dt*EYE_SPEED + eye.position[0]),
-                Math.floor((targetEyePosition[1]-eye.position[1])*dt*EYE_SPEED + eye.position[1])
+            objs.eye.position = [
+                Math.min(Math.max(Math.floor((EYE_CENTER[0] + mouseCenterOffset[0]-objs.eye.position[0])*dt*EYE_SPEED + objs.eye.position[0]),EYE_CENTER[0]- EYE_RANGE[0]) ,EYE_CENTER[0]+ EYE_RANGE[0]),
+                Math.min(Math.max(Math.floor((EYE_CENTER[1] + mouseCenterOffset[1]-objs.eye.position[1])*dt*EYE_SPEED + objs.eye.position[1]),EYE_CENTER[1]- EYE_RANGE[1]) ,EYE_CENTER[1]+ EYE_RANGE[1])
             ]
         }
         drawFrameIndex++;
